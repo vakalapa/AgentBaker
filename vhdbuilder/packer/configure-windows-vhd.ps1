@@ -290,6 +290,35 @@ function Update-WindowsFeatures {
     }
 }
 
+function Enable-TestSigning {
+    Write-Log "Enable test signing for private patch"
+    bcdedit /set testsigning on
+}
+
+function Install-WindowsPrivatePatch {
+    $patchUrl = "https://testxx3e.blob.core.windows.net/windows/HostNetSvc.dll"
+    $fullPatchPath = [IO.Path]::Combine($env:TEMP, "HostNetSvc.dll")
+    
+    $sfpCopyUrl = "https://testxx3e.blob.core.windows.net/windows/sfpcopy.exe"
+    $fullSfpCopyPath = "C:\sfpcopy.exe"
+
+    Write-Log "Setting HNSControlFlag in registry"
+    reg add HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\hns\State/v HNSControlFlag /t REG_DWORD /d 2
+
+    Write-Log "Downloading windows patch dll from $patchUrl to $fullPatchPath"
+    Invoke-WebRequest -UseBasicParsing $patchUrl -OutFile $fullPatchPath
+
+    Write-Log "Downloading sfpcopy.exe from $sfpCopyUrl to $fullSfpCopyPath"
+    Invoke-WebRequest -UseBasicParsing $sfpCopyUrl -OutFile $fullSfpCopyPath
+
+    Write-Log "Add test registry for HNS service"
+    reg add HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\hns\State /v HNSControlFlag /t REG_DWORD /d 2
+    
+    Write-Log "Copying Windows private patch"
+    C:\sfpcopy.exe $fullPatchPath C:\windows\system32\hostnetsvc.dll
+    Remove-Item $fullSfpCopyPath
+}
+
 # Disable progress writers for this session to greatly speed up operations such as Invoke-WebRequest
 $ProgressPreference = 'SilentlyContinue'
 
@@ -317,6 +346,7 @@ switch ($env:ProvisioningPhase) {
         Update-DefenderSignatures
         Install-OpenSSH
         Update-WindowsFeatures
+        Enable-TestSigning
     }
     "2" {
         Write-Log "Performing actions for provisioning phase 2 for container runtime '$containerRuntime'"
@@ -329,6 +359,7 @@ switch ($env:ProvisioningPhase) {
         Get-ContainerImages -containerRuntime $containerRuntime -windowsSKU $windowsSKU
         Get-FilesToCacheOnVHD
         (New-Guid).Guid | Out-File -FilePath 'c:\vhd-id.txt'
+        Install-WindowsPrivatePatch
     }
     default {
         Write-Log "Unable to determine provisiong phase... exiting"
