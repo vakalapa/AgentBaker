@@ -1,17 +1,10 @@
-trigger: none
-pr: none
-
-jobs:
-- job: create_marketplace_sku
-  pool:
-    name: $(BUILD_POOL)
-  steps:
+steps:
   - script: |
       docker run --rm \
       -v ${PWD}:/go/src/github.com/Azure/AgentBaker \
       -w /go/src/github.com/Azure/AgentBaker \
       ${DEIS_GO_DEV_IMAGE} make bootstrap
-    displayName: Update tools
+    displayName: Building windows VHD
   - script: |
       docker run --rm \
       -v ${PWD}:/go/src/github.com/Azure/AgentBaker \
