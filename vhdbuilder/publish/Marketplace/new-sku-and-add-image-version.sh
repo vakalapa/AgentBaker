@@ -11,6 +11,8 @@ required_env_vars=(
     "CONTAINER_RUNTIME"
 )
 
+(set -x; ls -lhR artifacts )
+
 for v in "${required_env_vars[@]}"
 do
     if [ -z "${!v}" ]; then
@@ -28,7 +30,7 @@ vhd_artifacts_path="publishing-info-2019"
 if [[ ${CONTAINER_RUNTIME} = "containerd" ]]; then
     vhd_artifacts_path="publishing-info-2019-containerd"
 fi
-VHD_INFO="vhd/${vhd_artifacts_path}/vhd-publishing-info.json"
+VHD_INFO="artifacts/vhd/${vhd_artifacts_path}/vhd-publishing-info.json"
 if [ ! -f "$VHD_INFO" ]; then
     echo "Could not find VHD info file: ${VHD_INFO}!"
     exit 1

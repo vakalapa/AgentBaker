@@ -1,4 +1,13 @@
 steps:
+  - task: DownloadPipelineArtifact@2
+    displayName: Download VHD publishing info
+    inputs:
+      source: 'specific'
+      path: artifacts/vhd
+      project: 'CloudNativeCompute'
+      pipeline: 172842
+      runVersion: 'specific'
+      runId: $(VHD_PIPELINE_RUN_ID)
   - script: |
       docker run --rm \
       -v ${PWD}:/go/src/github.com/Azure/AgentBaker \
