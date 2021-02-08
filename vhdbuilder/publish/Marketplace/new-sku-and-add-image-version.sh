@@ -1,8 +1,5 @@
 #!/bin/bash -e
 
-cd '/build' || exit
-echo "PWD: $PWD"
-
 required_env_vars=(
     "SKU_PREFIX"
     "SKU_TEMPLATE_FILE"
@@ -27,9 +24,11 @@ if [ ! -f "$SKU_TEMPLATE_FILE" ]; then
     exit 1
 fi
 
-(set -x; ls -lhR artifacts )
-
-VHD_INFO="vhd/publishing-info/vhd-publishing-info.json"
+vhd_artifacts_path="publishing-info-2019"
+if [[ ${CONTAINER_RUNTIME} = "containerd" ]]; then
+    vhd_artifacts_path="publishing-info-2019-containerd"
+fi
+VHD_INFO="vhd/${vhd_artifacts_path}/vhd-publishing-info.json"
 if [ ! -f "$VHD_INFO" ]; then
     echo "Could not find VHD info file: ${VHD_INFO}!"
     exit 1
@@ -48,7 +47,6 @@ else
     echo "Creating new SKU"
     < $SKU_TEMPLATE_FILE sed s/{{ID}}/"$sku_id"/ | sed s/{{MONTH-YEAR}}/"$pretty_date/" | sed s/{{CONTAINER_RUNTIME}}/"$CONTAINER_RUNTIME/" > sku.json
     echo "" ; cat sku.json ; echo ""
-    (set -x ; hack/tools/bin/pub skus put -p $PUBLISHER -o $OFFER -f sku.json ; echo "")
 fi
 
 echo "Vhd publishing info:"
@@ -82,4 +80,3 @@ echo "published date: $published_date"
 echo "image label: $published_image_label"
 echo "image description: $published_image_description"
 echo ""
-(set -x ; hack/tools/bin/pub versions put corevm -p $PUBLISHER -o $OFFER -s $sku_id --version $image_version --vhd-uri $vhd_url --media-name $media_name --label "AKS Base Image for Windows" --desc "AKS Base Image for Windows" --published-date "$published_date")
