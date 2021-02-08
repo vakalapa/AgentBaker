@@ -4,7 +4,7 @@ steps:
       -v ${PWD}:/go/src/github.com/Azure/AgentBaker \
       -w /go/src/github.com/Azure/AgentBaker \
       ${CONTAINER_IMAGE} make bootstrap
-    displayName: Building windows VHD
+    displayName: Setup tools
   - script: |
       docker run --rm \
       -v ${PWD}:/go/src/github.com/Azure/AgentBaker \
