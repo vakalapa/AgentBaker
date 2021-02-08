@@ -48,7 +48,7 @@ function Get-ContainerImages {
     $imagesToPull = @()
 
     switch ($windowsSKU) {
-        '2019'| '2019-containerd' {
+        { '2019', '2019-containerd'} {
             $imagesToPull = @(
                 "mcr.microsoft.com/windows/servercore:ltsc2019",
                 "mcr.microsoft.com/windows/nanoserver:1809",
