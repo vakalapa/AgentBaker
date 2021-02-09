@@ -3,6 +3,10 @@ Description=Kubelet
 ConditionPathExists=/usr/local/bin/kubelet
 
 
+Requires=bind-mount.service
+After=bind-mount.service
+
+
 [Service]
 Restart=always
 EnvironmentFile=/etc/default/kubelet
