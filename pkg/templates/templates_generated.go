@@ -3758,7 +3758,7 @@ write_files:
     {{GetVariableProperty "cloudInitData" "updateNodeLabelsScript"}}  
 {{end}}
 
-{{if HasKubeletDiskType}}
+{{- if HasKubeletDiskType}}
 - path: /opt/azure/containers/bind-mount.sh
   permissions: "0544"
   encoding: gzip

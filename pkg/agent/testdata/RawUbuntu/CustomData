@@ -73,8 +73,6 @@ write_files:
 
 
 
-
-
 - path: /usr/local/bin/health-monitor.sh
   permissions: "0544"
   encoding: gzip

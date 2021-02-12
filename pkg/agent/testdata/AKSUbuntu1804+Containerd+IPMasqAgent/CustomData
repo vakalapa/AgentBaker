@@ -51,8 +51,6 @@ write_files:
 
 
 
-
-
 - path: /etc/apt/apt.conf.d/99periodic
   permissions: "0644"
   owner: root
