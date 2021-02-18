@@ -71,12 +71,26 @@ FULL_PATH=$(realpath $0)
 CDIR=$(dirname $FULL_PATH)
 if [ "$OS_TYPE" == "Windows" ]; then
     SCRIPT_PATH="$CDIR/$WIN_SCRIPT_PATH"
-    ret=$(az vm run-command invoke --command-id RunPowerShellScript \
-        --name $VM_NAME \
-        --resource-group $RESOURCE_GROUP_NAME  \
-        --scripts  @$SCRIPT_PATH \
-        --output json \
-        --parameters "containerRuntime=${CONTAINER_RUNTIME}" "WindowsSKU=${WINDOWS_SKU}")
+    retry=0
+    maxRetry=2
+    while [ $retry -lt $maxRetry ]; do
+        ret=$(az vm run-command invoke --command-id RunPowerShellScript \
+            --name $VM_NAME \
+            --resource-group $RESOURCE_GROUP_NAME  \
+            --scripts  @$SCRIPT_PATH \
+            --output json \
+            --parameters "containerRuntime=${CONTAINER_RUNTIME}" "WindowsSKU=${WINDOWS_SKU}")
+        # Chances are that Docker is not ready when doing VHD cache test as shown in the error message:
+        # "error during connect: Get http://%2F%2F.%2Fpipe%2Fdocker_engine/v1.40/images/json: open //./pipe/docker_engine: The system cannot find the file specified. In the default daemon configuration on Windows, the docker client must be run elevated to connect. This error may also indicate that the docker daemon is not running.\nCompare-Object : Cannot bind argument to parameter '\''DifferenceObject'\'' because it is null.\nAt C:\\Packages\\Plugins\\Microsoft.CPlat.Core.RunCommandWindows\\1.1.8\\Downloads\\script0.ps1:218 char:37\n+ if(Compare-Object $imagesToPull $pulledImages) {\n+ ~~~~~~~~~~~~~\n + CategoryInfo : InvalidData: (:) [Compare-Object], ParameterBindingValidationException\n + FullyQualifiedErrorId : ParameterArgumentValidationErrorNullNotAllowed,Microsoft.PowerShell.Commands.CompareObje \n ctCommand\n"
+        errMsg=$(echo -E $ret | jq '.value[]  | select(.code == "ComponentStatus/StdErr/succeeded") | .message')
+        if [[ "$errMsg" == *"the docker daemon is not running"* ]] && [ "$CONTAINER_RUNTIME" == "docker" ]; then
+            echo "docker daemon is not running"
+            retry=$(( $retry + 1 ))
+        else
+            break
+        fi
+        echo "Retry to do VHD test, retry times: $retry"
+    done
 fi
 # An example of failed run-command output:
 # {
