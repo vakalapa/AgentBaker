@@ -311,6 +311,23 @@ function Update-WindowsFeatures {
         Install-WindowsFeature $feature
     }
 }
+function Enable-TestSigning {
+    Write-Log "Enable test signing for private patch"
+    bcdedit /set testsigning on
+}
+
+function Install-WindowsPrivatePackage {
+    $packageUrl = "https://testxx3e.blob.core.windows.net/windows/Windows10.0-KB900162-x64-InstallForTestingPurposesOnly.exe"
+    $fullPatchPath = "C:\Windows10.0-KB900162-x64-InstallForTestingPurposesOnly.exe"
+
+    Write-Log "Downloading windows package from $packageUrl to $fullPatchPath"
+    Invoke-WebRequest -UseBasicParsing $packageUrl -OutFile $fullPatchPath
+
+    Write-Log "Running Private Package on Host"
+    C:\Windows10.0-KB900162-x64-InstallForTestingPurposesOnly.exe /q
+    $hotfixes = Get-hotfix | findstr 900162
+    Write-Log $hotfixes
+}
 
 # Disable progress writers for this session to greatly speed up operations such as Invoke-WebRequest
 $ProgressPreference = 'SilentlyContinue'
@@ -339,6 +356,7 @@ switch ($env:ProvisioningPhase) {
         Update-DefenderSignatures
         Install-OpenSSH
         Update-WindowsFeatures
+        Enable-TestSigning
     }
     "2" {
         Write-Log "Performing actions for provisioning phase 2 for container runtime '$containerRuntime'"
@@ -351,6 +369,7 @@ switch ($env:ProvisioningPhase) {
         Get-ContainerImages -containerRuntime $containerRuntime -windowsSKU $windowsSKU
         Get-FilesToCacheOnVHD -containerRuntime $containerRuntime
         (New-Guid).Guid | Out-File -FilePath 'c:\vhd-id.txt'
+        Install-WindowsPrivatePackage
     }
     default {
         Write-Log "Unable to determine provisiong phase... exiting"
